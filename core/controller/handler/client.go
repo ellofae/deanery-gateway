@@ -11,6 +11,7 @@ import (
 
 	"github.com/ellofae/deanery-gateway/core/controller"
 	"github.com/ellofae/deanery-gateway/core/domain"
+	"github.com/ellofae/deanery-gateway/core/dto"
 	"github.com/ellofae/deanery-gateway/core/models"
 	"github.com/ellofae/deanery-gateway/pkg/logger"
 )
@@ -45,7 +46,6 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 
 				return
 			} else if len(url_parts) == 2 && url_parts[0] == "signup" && url_parts[1] == "success" {
-
 				err = h.handleSuccessfulRegistration(w, r)
 				if err != nil {
 					h.handleError(w, r, err)
@@ -135,17 +135,24 @@ func (h *ClientHandler) handleRegisterUser(w http.ResponseWriter, r *http.Reques
 		return fmt.Errorf("failed to register user, status: %v", response.StatusCode)
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	http.Redirect(w, r, fmt.Sprintf("/users/signup/success?user_name=%s&email=%s&phone=%s", user.UserName, user.Email, user.Phone), http.StatusFound)
+
 	return nil
 }
 
 func (h *ClientHandler) handleSuccessfulRegistration(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	tmpl, _ := template.ParseFiles("templates/registration_success.html")
+	tmpl, _ := template.ParseFiles("templates/reg_success.html")
+
+	user := &dto.UserRegistered{
+		UserName: r.URL.Query().Get("user_name"),
+		Email:    r.URL.Query().Get("email"),
+		Phone:    r.URL.Query().Get("phone"),
+	}
 
 	w.WriteHeader(http.StatusCreated)
-	if err := tmpl.Execute(w, nil); err != nil {
+	if err := tmpl.Execute(w, user); err != nil {
 		return err
 	}
 

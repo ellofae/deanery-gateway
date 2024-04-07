@@ -45,7 +45,23 @@
       </nav>
 
     <div class="container">
-        <h1>Пользователь зарегистрирован</h1>
+        <h1>Пользователь успешно зарегистрирован!</h1>
+        <table class="table table-dark table-striped">
+          <thead>
+              <th scope="col">Имя пользователя</th>
+              <th scope="col">Почта</th>
+              <th scope="col">Телефон</th>
+          </thead>
+          <tbody>
+            <tbody>
+              <tr>
+                <td>{{ .UserName }}</td>
+                <td>{{ .Email }}</td>
+                <td>{{ .Phone }}</td>
+              </tr>
+            </tbody>
+          </tbody>
+        </table>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>

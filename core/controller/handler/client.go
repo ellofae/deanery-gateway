@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/ellofae/deanery-gateway/core/controller"
+	"github.com/ellofae/deanery-gateway/core/controller/middleware"
 	"github.com/ellofae/deanery-gateway/core/domain"
 	"github.com/ellofae/deanery-gateway/core/dto"
 	"github.com/ellofae/deanery-gateway/core/models"
@@ -31,7 +32,7 @@ func NewClientHandler(clientUsecase domain.IClientUsecase) controller.IHandler {
 }
 
 func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/users/", middleware.AuthenticateMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
 		parsed_url := strings.TrimPrefix(r.URL.Path, "/users/")
@@ -95,7 +96,7 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 		}
 
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	})
+	})))
 }
 
 func (h *ClientHandler) handleError(w http.ResponseWriter, r *http.Request, err_occured error) {

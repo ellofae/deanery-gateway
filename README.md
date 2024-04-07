@@ -8,4 +8,7 @@ ServerSettings:
   readTimeout: '1'
   writeTimeout: '1'
   idleTimeout: '5'
+
+Session:
+  sessionKey: ''
 ```

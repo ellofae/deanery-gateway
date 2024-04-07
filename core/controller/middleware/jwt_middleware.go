@@ -2,8 +2,12 @@ package middleware
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/ellofae/deanery-gateway/config"
+	"github.com/ellofae/deanery-gateway/core/session"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -11,6 +15,7 @@ type AccessTokenData struct {
 	Expiry     int64
 	IssuedAt   int64
 	RecordCode string
+	Role       string
 	State      string
 }
 
@@ -41,6 +46,7 @@ func ParseToken(tokenString string) (*AccessTokenData, error) {
 			Expiry:     int64(expiry),
 			IssuedAt:   int64(issued_at),
 			RecordCode: claims["record_code"].(string),
+			Role:       claims["role"].(string),
 			State:      claims["state"].(string),
 		}, nil
 	} else {
@@ -48,45 +54,54 @@ func ParseToken(tokenString string) (*AccessTokenData, error) {
 	}
 }
 
-// func AuthenticateUser(c *gin.Context) {
-// 	storage := repository.SessionStorage()
+func AuthenticateMiddleware(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		storage := session.SessionStorage()
 
-// 	session, err := storage.Get(c.Request, "session")
-// 	if err != nil {
-// 		response_errors.NewErrorResponse(c, http.StatusInternalServerError, "Unable to get session")
-// 		return
-// 	}
+		switch r.URL.Path {
+		case "/users/login":
+			next.ServeHTTP(w, r)
+			return
+		}
 
-// 	sessionValue, ok := session.Values["access_token"]
-// 	if !ok {
-// 		response_errors.NewErrorResponse(c, http.StatusUnauthorized, "Authorization data field is empty")
-// 		return
-// 	}
+		session, err := storage.Get(r, "session")
+		if err != nil {
+			http.Error(w, "Unable to get the session, error: %v", http.StatusInternalServerError)
+			return
+		}
 
-// 	jwtString := strings.Split(sessionValue.(string), "Bearer ")
-// 	if len(jwtString) < 2 {
-// 		response_errors.NewErrorResponse(c, http.StatusInternalServerError, "Must provide Authorization data with format `Bearer {token}`")
-// 		return
-// 	}
+		sessionValue, ok := session.Values["access_token"]
+		if !ok {
+			http.Error(w, "Authorization data field is empty", http.StatusUnauthorized)
+			return
+		}
 
-// 	token_claims, err := ParseToken(jwtString[1])
-// 	if err != nil {
-// 		response_errors.NewErrorResponse(c, http.StatusInternalServerError, "Incorrect access token provided")
-// 		return
-// 	}
+		jwtString := strings.Split(sessionValue.(string), "Bearer ")
+		if len(jwtString) < 2 {
+			http.Error(w, "Must provide Authorization data with format Bearer {token}", http.StatusBadRequest)
+			return
+		}
 
-// 	expiry := token_claims.Expiry
-// 	if expiry < time.Now().Unix() {
-// 		response_errors.NewErrorResponse(c, http.StatusInternalServerError, "Token expired")
-// 		return
-// 	}
+		tokenClaims, err := ParseToken(jwtString[1])
+		if err != nil {
+			http.Error(w, "Incorrect access token provided", http.StatusBadRequest)
+			return
+		}
 
-// 	session.Values["user_id"] = token_claims.UserID
-// 	err = session.Save(c.Request, c.Writer)
-// 	if err != nil {
-// 		response_errors.NewHTTPResponse(c, http.StatusInternalServerError, "Unable to save session data", err)
-// 		return
-// 	}
+		expiry := tokenClaims.Expiry
+		if expiry < time.Now().Unix() {
+			http.Error(w, "Token expired", http.StatusUnauthorized)
+			return
+		}
 
-// 	c.Next()
-// }
+		session.Values["record_code"] = tokenClaims.RecordCode
+		session.Values["role"] = tokenClaims.Role
+		err = session.Save(r, w)
+		if err != nil {
+			http.Error(w, "Unable to save session data", http.StatusInternalServerError)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+}

@@ -40,8 +40,7 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 			if len(url_parts) == 1 && url_parts[0] == "signup" {
 				err = h.handleShowRegistrationPage(w, r)
 				if err != nil {
-					http.Error(w, fmt.Sprintf("Failed to show the registration page. Error: %v.\n", err), http.StatusInternalServerError)
-					return
+					h.handleError(w, r, err)
 				}
 
 				return
@@ -49,8 +48,7 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 
 				err = h.handleSuccessfulRegistration(w, r)
 				if err != nil {
-					http.Error(w, fmt.Sprintf("Failed to show the registration page. Error: %v.\n", err), http.StatusInternalServerError)
-					return
+					h.handleError(w, r, err)
 				}
 
 				return
@@ -60,8 +58,7 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 			if len(url_parts) == 1 && url_parts[0] == "signup" {
 				err = h.handleRegisterUser(w, r)
 				if err != nil {
-					http.Error(w, fmt.Sprintf("Unable to register a user. Error: %v.\n", err), http.StatusInternalServerError)
-					return
+					h.handleError(w, r, err)
 				}
 
 				return
@@ -70,6 +67,15 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
+}
+
+func (h *ClientHandler) handleError(w http.ResponseWriter, r *http.Request, err_occured error) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	w.WriteHeader(http.StatusInternalServerError)
+
+	tmpl, _ := template.ParseFiles("templates/error.html")
+	_ = tmpl.Execute(w, models.APIError{ErrorMsg: err_occured.Error()})
 }
 
 func (h *ClientHandler) handleShowRegistrationPage(w http.ResponseWriter, r *http.Request) error {

@@ -6,3 +6,8 @@ type UserRegistration struct {
 	Phone      string `json:"phone" validate:"required,e164"`
 	UserStatus string `json:"user_status" validate:"required"`
 }
+
+type UserLogin struct {
+	RecordCode int    `json:"record_code"`
+	Password   string `json:"password"`
+}

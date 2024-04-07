@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/ellofae/deanery-gateway/core/controller"
@@ -38,30 +39,50 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 		switch r.Method {
 		case http.MethodGet:
 			// endpoint /users/signup - GET
-			if len(url_parts) == 1 && url_parts[0] == "signup" {
-				err = h.handleShowRegistrationPage(w, r)
-				if err != nil {
-					h.handleError(w, r, err)
-				}
+			if len(url_parts) == 1 {
+				if url_parts[0] == "signup" {
+					err = h.handleShowRegistrationPage(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
 
-				return
-			} else if len(url_parts) == 2 && url_parts[0] == "signup" && url_parts[1] == "success" {
-				err = h.handleSuccessfulRegistration(w, r)
-				if err != nil {
-					h.handleError(w, r, err)
-				}
+					return
+				} else if url_parts[0] == "login" {
+					err = h.handleShowLoginPage(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
 
-				return
+					return
+				}
+			} else if len(url_parts) == 2 {
+				if url_parts[0] == "signup" && url_parts[1] == "success" {
+					err = h.handleSuccessfulRegistration(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
+
+					return
+				}
 			}
 		case http.MethodPost:
 			// endpoint /users/signup - POST
-			if len(url_parts) == 1 && url_parts[0] == "signup" {
-				err = h.handleRegisterUser(w, r)
-				if err != nil {
-					h.handleError(w, r, err)
-				}
+			if len(url_parts) == 1 {
+				if url_parts[0] == "signup" {
+					err = h.handleRegisterUser(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
 
-				return
+					return
+				} else if url_parts[0] == "login" {
+					err = h.handleLoginUser(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
+
+					return
+				}
 			}
 		}
 
@@ -154,6 +175,53 @@ func (h *ClientHandler) handleSuccessfulRegistration(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusCreated)
 	if err := tmpl.Execute(w, user); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (h *ClientHandler) handleShowLoginPage(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	tmpl, _ := template.ParseFiles("templates/login.html")
+
+	w.WriteHeader(http.StatusOK)
+
+	if err := tmpl.Execute(w, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *ClientHandler) handleLoginUser(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Add("Content-Type", "application/json")
+
+	var err error
+
+	userCode, err := strconv.Atoi(r.FormValue("login"))
+	if err != nil {
+		return err
+	}
+
+	user := &models.UserLogin{
+		RecordCode: userCode,
+		Password:   r.FormValue("password"),
+	}
+
+	json_data, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post("http://localhost:8000/api/login", "application/json", bytes.NewReader(json_data))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to login user, status: %v", response.StatusCode)
 	}
 
 	return nil

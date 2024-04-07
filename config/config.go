@@ -18,6 +18,14 @@ type Config struct {
 		WriteTimeout string `yaml:"writeTimeout"`
 		IdleTimeout  string `yaml:"idleTimeout"`
 	} `yaml:"ServerSettings"`
+
+	Authentication struct {
+		JwtSecretToken string `yaml:"jwtSecretToken"`
+	} `yaml:"Authentication"`
+
+	Session struct {
+		SessionKey string `yaml:"sessionKey"`
+	} `yaml:"Session"`
 }
 
 func ConfigureViper() *viper.Viper {

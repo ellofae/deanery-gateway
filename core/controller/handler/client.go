@@ -14,6 +14,7 @@ import (
 	"github.com/ellofae/deanery-gateway/core/domain"
 	"github.com/ellofae/deanery-gateway/core/dto"
 	"github.com/ellofae/deanery-gateway/core/models"
+	"github.com/ellofae/deanery-gateway/core/session"
 	"github.com/ellofae/deanery-gateway/pkg/logger"
 )
 
@@ -49,6 +50,13 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 					return
 				} else if url_parts[0] == "login" {
 					err = h.handleShowLoginPage(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
+
+					return
+				} else if url_parts[0] == "index" {
+					err = h.handleShowIndexPage(w, r)
 					if err != nil {
 						h.handleError(w, r, err)
 					}
@@ -222,6 +230,37 @@ func (h *ClientHandler) handleLoginUser(w http.ResponseWriter, r *http.Request) 
 
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to login user, status: %v", response.StatusCode)
+	}
+
+	tokens := &dto.Tokens{}
+	if err = json.NewDecoder(response.Body).Decode(tokens); err != nil {
+		return err
+	}
+
+	store := session.SessionStorage()
+	session, err := store.Get(r, "session")
+	if err != nil {
+		return err
+	}
+
+	session.Values["access_token"] = fmt.Sprintf("%s %s", "Bearer", tokens.AccessToken)
+	err = session.Save(r, w)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *ClientHandler) handleShowIndexPage(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	tmpl, _ := template.ParseFiles("templates/index.html")
+
+	w.WriteHeader(http.StatusOK)
+
+	if err := tmpl.Execute(w, nil); err != nil {
+		return err
 	}
 
 	return nil

@@ -12,6 +12,7 @@ import (
 	"github.com/ellofae/deanery-gateway/core/controller/handler"
 	"github.com/ellofae/deanery-gateway/core/controller/middleware"
 	"github.com/ellofae/deanery-gateway/core/domain/usecase"
+	"github.com/ellofae/deanery-gateway/core/session"
 	"github.com/ellofae/deanery-gateway/pkg/logger"
 )
 
@@ -25,6 +26,9 @@ func establishGatewayHandlers(mux *http.ServeMux, cfg *config.Config) {
 func main() {
 	logger := logger.GetLogger()
 	cfg := config.ParseConfig(config.ConfigureViper())
+
+	middleware.InitJWTSecretKey(cfg)
+	session.InitSessionStorage(cfg)
 
 	idleTimeout, _ := strconv.Atoi(cfg.ServerSettings.IdleTimeout)
 	readTimeout, _ := strconv.Atoi(cfg.ServerSettings.ReadTimeout)

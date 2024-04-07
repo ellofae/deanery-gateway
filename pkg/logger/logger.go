@@ -13,7 +13,7 @@ func GetLogger() *log.Logger {
 	once.Do(func() {
 		logger = log.New(
 			os.Stdout,
-			"authentication-deanery: ",
+			"deanery-gateway: ",
 			log.Ldate|log.Ltime|log.LUTC|log.Lshortfile,
 		)
 	})

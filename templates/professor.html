@@ -37,7 +37,8 @@
     <div class="row mt-5">
         <div class="col-md-3">
             <img src="tutor.jpg" alt="Аватар преподавателя" class="img-fluid rounded-circle">
-            <h2>Быковский Даниил Игоревич</h2>
+            <h2>{{ .Username }}</h2>
+            <h3>Внутренний номер: {{ .Code }}</h3>
             <button type="button" class="btn btn-primary mb-2">Обратиться в деканат</button>
             <button type="button" class="btn btn-primary mb-2">Информация о студентах</button>
         </div>

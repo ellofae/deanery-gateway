@@ -37,7 +37,8 @@
     <div class="row mt-5">
         <div class="col-md-3">
             <img src="avatar.png" alt="Аватар студента" class="img-fluid rounded-circle">
-            <h2>Голоднова Карина Робертовна</h2>
+            <h2>{{ .Username }}</h2>
+            <h3>Внутренний номер: {{ .RecordCode }}</h3>
             <button type="button" class="btn btn-primary mt-3">Обратиться в деканат</button> <!-- Кнопка "Обратиться в деканат" -->
         </div>
         <div class="col-md-6">

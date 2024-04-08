@@ -5,3 +5,8 @@ type UserRegistered struct {
 	Email    string
 	Phone    string
 }
+
+type ProfileInformation struct {
+	Username   string `json:"user_name"`
+	RecordCode int    `json:"record_code"`
+}

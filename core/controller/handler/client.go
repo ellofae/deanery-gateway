@@ -265,7 +265,34 @@ func (h *ClientHandler) handleShowProfilePage(w http.ResponseWriter, r *http.Req
 		return err
 	}
 
-	h.logger.Printf(session.Values["role"].(string))
+	code, err := strconv.Atoi(session.Values["record_code"].(string))
+	if err != nil {
+		return err
+	}
+
+	recordCode := &dto.RecordCode{
+		Code: code,
+	}
+
+	json_data, err := json.Marshal(recordCode)
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post("http://localhost:8000/api/get_username", "application/json", bytes.NewReader(json_data))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("received status is not http.StatusOK, status: %v", response.StatusCode)
+	}
+
+	profileInfo := dto.ProfileInformation{}
+	if err = json.NewDecoder(response.Body).Decode(&profileInfo); err != nil {
+		return err
+	}
 
 	switch session.Values["role"].(string) {
 	case "student":
@@ -275,7 +302,7 @@ func (h *ClientHandler) handleShowProfilePage(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if err := tmpl.Execute(w, nil); err != nil {
+	if err := tmpl.Execute(w, profileInfo); err != nil {
 		return err
 	}
 

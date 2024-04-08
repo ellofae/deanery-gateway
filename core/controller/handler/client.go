@@ -56,8 +56,8 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 					}
 
 					return
-				} else if url_parts[0] == "index" {
-					err = h.handleShowIndexPage(w, r)
+				} else if url_parts[0] == "profile" {
+					err = h.handleShowProfilePage(w, r)
 					if err != nil {
 						h.handleError(w, r, err)
 					}
@@ -250,16 +250,31 @@ func (h *ClientHandler) handleLoginUser(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
+	http.Redirect(w, r, "/users/profile", http.StatusFound)
 	return nil
 }
 
-func (h *ClientHandler) handleShowIndexPage(w http.ResponseWriter, r *http.Request) error {
+func (h *ClientHandler) handleShowProfilePage(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	tmpl, _ := template.ParseFiles("templates/index.html")
+	var tmpl *template.Template
+
+	storage := session.SessionStorage()
+	session, err := storage.Get(r, "session")
+	if err != nil {
+		return err
+	}
+
+	h.logger.Printf(session.Values["role"].(string))
+
+	switch session.Values["role"].(string) {
+	case "student":
+		tmpl, _ = template.ParseFiles("templates/student.html")
+	case "professor":
+		tmpl, _ = template.ParseFiles("templates/professor.html")
+	}
 
 	w.WriteHeader(http.StatusOK)
-
 	if err := tmpl.Execute(w, nil); err != nil {
 		return err
 	}

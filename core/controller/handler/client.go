@@ -65,13 +65,15 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 					return
 				}
 			} else if len(url_parts) == 2 {
-				if url_parts[0] == "signup" && url_parts[1] == "success" {
-					err = h.handleSuccessfulRegistration(w, r)
-					if err != nil {
-						h.handleError(w, r, err)
-					}
+				if url_parts[0] == "signup" {
+					if url_parts[1] == "success" {
+						err = h.handleSuccessfulRegistration(w, r)
+						if err != nil {
+							h.handleError(w, r, err)
+						}
 
-					return
+						return
+					}
 				}
 			}
 		case http.MethodPost:
@@ -96,6 +98,27 @@ func (h *ClientHandler) RegisterHandlers(mux *http.ServeMux) {
 		}
 
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})))
+
+	mux.HandleFunc("/system/", middleware.AuthenticateMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+
+		parsed_url := strings.TrimPrefix(r.URL.Path, "/system/")
+		url_parts := strings.Split(parsed_url, "/")
+
+		switch r.Method {
+		case http.MethodPost:
+			if len(url_parts) == 1 {
+				if url_parts[0] == "logout" {
+					err = h.handleLogout(w, r)
+					if err != nil {
+						h.handleError(w, r, err)
+					}
+
+					return
+				}
+			}
+		}
 	})))
 }
 
@@ -295,10 +318,12 @@ func (h *ClientHandler) handleShowProfilePage(w http.ResponseWriter, r *http.Req
 	}
 
 	switch session.Values["role"].(string) {
-	case "student":
+	case "Студент":
 		tmpl, _ = template.ParseFiles("templates/student.html")
-	case "professor":
+	case "Преподаватель":
 		tmpl, _ = template.ParseFiles("templates/professor.html")
+	case "Администратор":
+		tmpl, _ = template.ParseFiles("templates/administrator.html")
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -306,5 +331,22 @@ func (h *ClientHandler) handleShowProfilePage(w http.ResponseWriter, r *http.Req
 		return err
 	}
 
+	return nil
+}
+
+func (h *ClientHandler) handleLogout(w http.ResponseWriter, r *http.Request) error {
+	store := session.SessionStorage()
+
+	session, err := store.Get(r, "session")
+	if err != nil {
+		return err
+	}
+
+	delete(session.Values, "access_token")
+	if err = session.Save(r, w); err != nil {
+		return err
+	}
+
+	http.Redirect(w, r, "/users/login", http.StatusFound)
 	return nil
 }

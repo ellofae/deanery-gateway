@@ -62,6 +62,9 @@ func AuthenticateMiddleware(next http.Handler) http.HandlerFunc {
 		case "/users/login":
 			next.ServeHTTP(w, r)
 			return
+		case "/users/signup":
+			next.ServeHTTP(w, r)
+			return
 		}
 
 		session, err := storage.Get(r, "session")
@@ -72,7 +75,7 @@ func AuthenticateMiddleware(next http.Handler) http.HandlerFunc {
 
 		sessionValue, ok := session.Values["access_token"]
 		if !ok {
-			http.Error(w, "Authorization data field is empty", http.StatusUnauthorized)
+			http.Redirect(w, r, "/users/login", http.StatusFound)
 			return
 		}
 
@@ -84,13 +87,13 @@ func AuthenticateMiddleware(next http.Handler) http.HandlerFunc {
 
 		tokenClaims, err := ParseToken(jwtString[1])
 		if err != nil {
-			http.Error(w, "Incorrect access token provided", http.StatusBadRequest)
+			http.Redirect(w, r, "/users/login", http.StatusFound)
 			return
 		}
 
 		expiry := tokenClaims.Expiry
 		if expiry < time.Now().Unix() {
-			http.Error(w, "Token expired", http.StatusUnauthorized)
+			http.Redirect(w, r, "/users/login", http.StatusFound)
 			return
 		}
 

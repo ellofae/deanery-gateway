@@ -62,9 +62,6 @@ func AuthenticateMiddleware(next http.Handler) http.HandlerFunc {
 		case "/users/login":
 			next.ServeHTTP(w, r)
 			return
-		case "/users/signup":
-			next.ServeHTTP(w, r)
-			return
 		}
 
 		session, err := storage.Get(r, "session")
